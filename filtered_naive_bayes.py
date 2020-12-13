@@ -25,20 +25,38 @@ training['text'] = training['text'].str.replace('\W', ' ')  # removes punctuatio
 training['text'] = training['text'].str.lower()  # turn letters into lowercase
 training['text'] = training['text'].str.split()  # split sentences into individual words
 
+
+def remove_singles(l):
+    once = set()
+    more = set()
+    for w in l:
+        if w not in more:
+            if w in once:
+                more.add(w)
+                once.remove(w)
+            else:
+                once.add(w)
+    return more
+
+
 vocab = []
 for tweet in training['text']:
     for word in tweet:
         vocab.append(word)
 
-vocab = list(set(vocab))  # removes duplicates in vocab
+filtered_vocab = remove_singles(vocab)
+original_vocab = list(set(vocab))  # removes duplicates in vocab
+vocab = list(set(filtered_vocab))
 
 # print(vocab)
-# print(len(vocab))
+# print(len(original_vocab))
+# print(len(filtered_vocab))
 
 tweet_word_count = {unique_word: [0] * len(training['text']) for unique_word in vocab}
 for index, tweet in enumerate(training['text']):
     for word in tweet:
-        tweet_word_count[word][index] += 1
+        if word in vocab:
+            tweet_word_count[word][index] += 1
 
 word_counts = pd.DataFrame(tweet_word_count)
 
@@ -139,7 +157,7 @@ with open("covid_test_public.tsv", encoding='utf8') as f:
 
 print(test_result)
 
-with open('./trace_NB-BOW-OV.txt', 'w') as f:
+with open('./trace_NB-BOW-FV.txt', 'w') as f:
     for content in test_result.values():
         f.write(content)
         f.write('\n')
@@ -153,7 +171,7 @@ no_recall = round(no_tp / (no_tp + false_negative), 4)
 yes_f1 = round((2 * yes_precision * yes_recall) / (yes_precision + yes_recall), 4)
 no_f1 = round((2 * no_precision * no_recall) / (no_precision + no_recall), 4)
 
-with open('./eval_NB-BOW-OV.txt', 'w') as f:
+with open('./eval_NB-BOW-FV.txt', 'w') as f:
     f.write(str(accuracy) + '\n')
     f.write(str(yes_precision) + "  " + str(no_precision) + '\n')
     f.write(str(yes_recall) + "  " + str(no_recall) + '\n')
